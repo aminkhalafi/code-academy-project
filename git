@@ -1,0 +1,38 @@
+import app
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+import tensorflow as tf
+from tensorflow	import keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras import layers
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import SGD
+
+from sklearn.compose import ColumnTransformer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import Normalizer
+from sklearn.metrics import r2_score
+
+dataset = pd.read_csv('admissions_data.csv')
+feature = dataset.iloc[:,0:-1]
+label =dataset.iloc[:,-1]
+feature_train,feature_test,label_train,label_test = train_test_split (feature,label,test_size=0.2,random_state=43)
+columns = feature.columns
+ct = ColumnTransformer ([('only numeric',StandardScaler(),columns)],remainder='passthrough')
+feature_train_scaled = ct.fit_transform(feature_train)
+feature_test_scaled = ct.transform(feature_test)
+model= Sequential()
+input = layers.InputLayer(input_shape = (feature.shape[1]))
+model.add(input)
+model.add(layers.Dense(64,activation='relu'))
+model.add(layers.Dense(1))
+opt= SGD(learning_rate=0.1)
+model.compile(loss='mse',metrics='mae',optimizer=opt)
+es = EarlyStopping(monitor='val_loss',mode='min',verbose=1,patience=20)
+model.fit(feature_train_scaled,label_train, epochs = 20 ,batch_size=4, verbose = 1, )
+res_mse,res_mae = model.evaluate(feature_test_scaled,label_test,verbose=0)
+print(res_mse,res_mae)
